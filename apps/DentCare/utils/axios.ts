@@ -128,7 +128,8 @@ export const appointmentAPI = {
 // DENTISTS
 // ============================================
 export const dentistAPI = {
-  getAll: (params?: any) => api.get('/dentists', { params }),
+  getAll: (params?: { specialty?: string; city?: string }) =>
+    api.get('/dentists', { params }),
   getById: (id: string) => api.get(`/dentists/${id}`),
   search: (q: string) => api.get(`/dentists/search?q=${q}`),
   getAvailability: (id: string) => api.get(`/dentists/${id}/availability`),

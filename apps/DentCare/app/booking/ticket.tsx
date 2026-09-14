@@ -1,38 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function TicketScreen() {
+  const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Appointment Ticket</Text>
-        <Text style={styles.subtitle}>
-          Your QR code will appear here
-        </Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-white items-center justify-center">
+      <Text className="text-2xl font-bold text-gray-900">Ticket</Text>
+      <Text className="text-base text-gray-500 mt-2">
+        Appointment ID: {appointmentId}
+      </Text>
+      <Text className="text-sm text-gray-400 mt-4 px-8 text-center">
+        Full ticket with QR code coming in the next delivery.
+      </Text>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F1F1F',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8A8A8A',
-    marginTop: 8,
-  },
-});

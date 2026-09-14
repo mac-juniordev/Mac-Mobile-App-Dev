@@ -6,10 +6,11 @@ export default function BookingLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
+        contentStyle: { backgroundColor: '#FAFAF8' },
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="schedule" />
       <Stack.Screen name="ticket" />
     </Stack>
   );

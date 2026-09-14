@@ -25,10 +25,22 @@ import TrackIcon from '../../components/ui/icons/TrackIcon';
 import ChartIcon from '../../components/ui/icons/ChartIcon';
 import BellIcon from '../../components/ui/icons/BellIcon';
 import ProfileIcon from '../../components/ui/icons/ProfileIcon';
+import DangerZone from '../../components/ui/DangerZone';
+import DangerRow from '../../components/ui/DangerRow';
 import { theme } from '../../constants/theme';
 import { authAPI, appointmentAPI } from '../../utils/axios';
 
 const { width } = Dimensions.get('window');
+
+/*
+|--------------------------------------------------------------------------
+| Layout constants
+|--------------------------------------------------------------------------
+*/
+
+const GRID_GAP = 12;
+const GRID_PADDING = 20;
+const GRID_CARD_WIDTH = (width - GRID_PADDING * 2 - GRID_GAP) / 2;
 
 /*
 |--------------------------------------------------------------------------
@@ -176,7 +188,8 @@ export default function ProfileScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       console.error('Upload error:', error);
-      const message = error.response?.data?.message || 'Failed to upload picture';
+      const message =
+        error.response?.data?.message || 'Failed to upload picture';
       Alert.alert('Error', message);
     } finally {
       setUploading(false);
@@ -185,27 +198,70 @@ export default function ProfileScreen() {
 
   /*
   |--------------------------------------------------------------------------
-  | Logout
+  | Danger zone actions
   |--------------------------------------------------------------------------
   */
 
   const handleLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out of DentCare?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log out',
+        style: 'destructive',
+        onPress: async () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          try {
+            await authAPI.logout();
+          } catch {}
+          await AsyncStorage.removeItem('token');
+          await AsyncStorage.removeItem('user');
+          router.replace('/onboarding');
+        },
+      },
+    ]);
+  };
+
+  const handleSuspend = () => {
     Alert.alert(
-      'Log out',
-      'Are you sure you want to log out of DentCare?',
+      'Suspend account?',
+      'Your account will be temporarily disabled. You can reactivate it anytime by logging back in. Your appointments will be preserved.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Log out',
+          text: 'Suspend',
           style: 'destructive',
-          onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            try {
-              await authAPI.logout();
-            } catch {}
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            router.replace('/onboarding');
+          onPress: () => {
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Warning
+            );
+            // TODO: wire to backend when suspend endpoint exists
+            Alert.alert(
+              'Not available yet',
+              'Account suspension will be enabled in a future update.'
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This action is permanent. All your appointments, records, and data will be erased. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Forever',
+          style: 'destructive',
+          onPress: () => {
+            Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Error
+            );
+            Alert.alert(
+              'Not available yet',
+              'Account deletion will be enabled in a future update. For now, please contact support.'
+            );
           },
         },
       ]
@@ -239,7 +295,14 @@ export default function ProfileScreen() {
 
   if (loading && !user) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-off items-center justify-center">
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.surface.off,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <ActivityIndicator size="large" color={theme.colors.primary.DEFAULT} />
       </SafeAreaView>
     );
@@ -258,7 +321,7 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: 60 }}
       >
         {/* ============================================
-            HERO HEADER with gradient
+            HERO HEADER
         ============================================ */}
 
         <Animated.View entering={FadeIn.duration(500)}>
@@ -274,7 +337,6 @@ export default function ProfileScreen() {
               borderBottomRightRadius: 32,
             }}
           >
-            {/* Header title */}
             <Text
               style={{
                 color: '#FFFFFF',
@@ -294,7 +356,6 @@ export default function ProfileScreen() {
               Manage your account and preferences
             </Text>
 
-            {/* Decorative circles */}
             <View
               style={{
                 position: 'absolute',
@@ -321,7 +382,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* ============================================
-            AVATAR overlapping the gradient
+            AVATAR
         ============================================ */}
 
         <Animated.View
@@ -382,7 +443,6 @@ export default function ProfileScreen() {
               )}
             </View>
 
-            {/* Camera badge */}
             <View
               style={{
                 position: 'absolute',
@@ -402,7 +462,6 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
-          {/* Name and email */}
           <Text
             style={{
               fontSize: 22,
@@ -424,7 +483,6 @@ export default function ProfileScreen() {
             {user?.email || ''}
           </Text>
 
-          {/* Member badge */}
           {memberSince && (
             <View
               style={{
@@ -450,7 +508,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* ============================================
-            STATS GRID
+            STATS ROW
         ============================================ */}
 
         <Animated.View
@@ -483,7 +541,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* ============================================
-            APPOINTMENTS SECTION
+            MY APPOINTMENTS — GRID
         ============================================ */}
 
         <Animated.View
@@ -492,8 +550,14 @@ export default function ProfileScreen() {
         >
           <SectionHeader title="My Appointments" />
 
-          <View style={{ gap: 12 }}>
-            <CardRow
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: GRID_GAP,
+            }}
+          >
+            <GridCard
               Icon={BookIcon}
               iconColor="#3A86FF"
               iconBg="#E8F1FF"
@@ -501,7 +565,7 @@ export default function ProfileScreen() {
               subtitle={`${stats.upcoming} scheduled`}
               onPress={() => router.push('/(tabs)/track')}
             />
-            <CardRow
+            <GridCard
               Icon={TrackIcon}
               iconColor="#FF8C42"
               iconBg="#FFF0E6"
@@ -509,7 +573,7 @@ export default function ProfileScreen() {
               subtitle={`${stats.total} total visits`}
               onPress={() => router.push('/(tabs)/track')}
             />
-            <CardRow
+            <GridCard
               Icon={ChartIcon}
               iconColor="#10B981"
               iconBg="#E6F7F1"
@@ -521,7 +585,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* ============================================
-            ACCOUNT SECTION
+            ACCOUNT — GRID
         ============================================ */}
 
         <Animated.View
@@ -530,16 +594,22 @@ export default function ProfileScreen() {
         >
           <SectionHeader title="Account" />
 
-          <View style={{ gap: 12 }}>
-            <CardRow
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: GRID_GAP,
+            }}
+          >
+            <GridCard
               Icon={ProfileIcon}
               iconColor="#8B5CF6"
               iconBg="#F3E8FF"
-              title="Personal Information"
+              title="Personal Info"
               subtitle="Name, email, phone"
               onPress={() => {}}
             />
-            <CardRow
+            <GridCard
               Icon={BellIcon}
               iconColor="#F59E0B"
               iconBg="#FEF3E2"
@@ -551,36 +621,38 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* ============================================
-            LOGOUT
+            DANGER ZONE
         ============================================ */}
 
         <Animated.View
           entering={FadeInDown.delay(500).duration(500)}
           style={{ marginTop: 32, paddingHorizontal: 20 }}
         >
-          <Pressable
-            onPress={handleLogout}
-            style={({ pressed }) => ({
-              backgroundColor: '#FFFFFF',
-              borderRadius: 18,
-              paddingVertical: 18,
-              alignItems: 'center',
-              borderWidth: 1.5,
-              borderColor: '#FECACA',
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-            })}
-          >
-            <Text
-              style={{
-                color: '#DC2626',
-                fontWeight: '700',
-                fontSize: 15,
-                letterSpacing: 0.3,
-              }}
-            >
-              LOG OUT
-            </Text>
-          </Pressable>
+          <DangerZone>
+            <DangerRow
+              title="Log out"
+              subtitle="Sign out of your account on this device"
+              actionLabel="Log Out"
+              onPress={handleLogout}
+            />
+
+            <DangerRow
+              title="Suspend account"
+              subtitle="Temporarily disable your account. Reactivate anytime by logging in."
+              actionLabel="Suspend"
+              onPress={handleSuspend}
+            />
+
+            <View style={{ marginBottom: -8 }}>
+              <DangerRow
+                title="Delete account"
+                subtitle="Permanently erase your account, appointments, and all data."
+                actionLabel="Delete"
+                onPress={handleDeleteAccount}
+                variant="solid"
+              />
+            </View>
+          </DangerZone>
         </Animated.View>
 
         {/* ============================================
@@ -784,15 +856,7 @@ function StatCard({ value, label, color, bg }: StatCardProps) {
           marginBottom: 10,
         }}
       >
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: '800',
-            color,
-          }}
-        >
-          {value}
-        </Text>
+        <Text style={{ fontSize: 20, fontWeight: '800', color }}>{value}</Text>
       </View>
 
       <Text
@@ -811,11 +875,11 @@ function StatCard({ value, label, color, bg }: StatCardProps) {
 
 /*
 |--------------------------------------------------------------------------
-| Card Row
+| Grid Card
 |--------------------------------------------------------------------------
 */
 
-interface CardRowProps {
+interface GridCardProps {
   Icon: React.ComponentType<{ size?: number; color?: string }>;
   iconColor: string;
   iconBg: string;
@@ -824,36 +888,37 @@ interface CardRowProps {
   onPress: () => void;
 }
 
-function CardRow({
+function GridCard({
   Icon,
   iconColor,
   iconBg,
   title,
   subtitle,
   onPress,
-}: CardRowProps) {
+}: GridCardProps) {
+  const [pressed, setPressed] = useState(false);
+
   return (
     <Pressable
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
-      style={({ pressed }) => ({
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={{
+        width: GRID_CARD_WIDTH,
         backgroundColor: '#FFFFFF',
-        borderRadius: 18,
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        transform: [{ scale: pressed ? 0.985 : 1 }],
+        borderRadius: 20,
+        padding: 16,
+        transform: [{ scale: pressed ? 0.97 : 1 }],
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 6,
         elevation: 2,
-      })}
+      }}
     >
-      {/* Icon bubble */}
       <View
         style={{
           width: 48,
@@ -862,45 +927,35 @@ function CardRow({
           backgroundColor: iconBg,
           alignItems: 'center',
           justifyContent: 'center',
+          marginBottom: 14,
         }}
       >
         <Icon size={22} color={iconColor} />
       </View>
 
-      {/* Text */}
-      <View style={{ flex: 1, marginLeft: 16 }}>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: '600',
-            color: theme.colors.text.primary,
-          }}
-          numberOfLines={1}
-        >
-          {title}
-        </Text>
-        <Text
-          style={{
-            fontSize: 12,
-            color: theme.colors.text.secondary,
-            marginTop: 3,
-          }}
-          numberOfLines={1}
-        >
-          {subtitle}
-        </Text>
-      </View>
-
-      {/* Chevron */}
       <Text
         style={{
-          fontSize: 22,
-          color: '#C8C8C8',
-          marginLeft: 8,
-          fontWeight: '300',
+          fontSize: 14,
+          fontWeight: '700',
+          color: theme.colors.text.primary,
+          letterSpacing: -0.2,
+          marginBottom: 4,
         }}
+        numberOfLines={2}
       >
-        ›
+        {title}
+      </Text>
+
+      <Text
+        style={{
+          fontSize: 11,
+          color: theme.colors.text.secondary,
+          fontWeight: '500',
+          lineHeight: 16,
+        }}
+        numberOfLines={2}
+      >
+        {subtitle}
       </Text>
     </Pressable>
   );
