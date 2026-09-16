@@ -8,6 +8,7 @@ import dentistRoutes from './routes/dentistRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -58,6 +59,7 @@ app.use('/api/dentists', dentistRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

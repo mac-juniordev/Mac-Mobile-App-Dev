@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEV_URL = 'http://192.168.62.155:5000/api';
+const DEV_URL = 'http://192.168.101.155:5000/api';
 const PROD_URL = 'https://api.dentcare.com/api';
 
 const BASE_URL = __DEV__ ? DEV_URL : PROD_URL;
